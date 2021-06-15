@@ -14,6 +14,8 @@ from base.Base import Base
 import pandas as pd
 import numpy as np
 import os
+from os import listdir
+from os.path import join
 import time
 import re
 import datetime as dt
@@ -56,28 +58,36 @@ class RawDataPreparation(Base):
         files = self.find_filespath(name, path)
         combined_df = pd.concat([pd.read_csv(file) for file in files])
         combined_df.to_csv(storedir + '\\' + name)
+        print(name + '_saved')
         return combined_df
 
     def runrawdata(self):
         ### Combine Raw Data for Y2020
-        storedir = 'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\2020tickdata'
+        storedir = 'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020\\Combined'
 
         ### first time running raw data
-        path = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data'
-        # filenames = self.find_filenames(path)
+        path = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020'
+
+        # filenames = ['a2001.csv','a2003.csv', 'a2005.csv', 'a2007.csv', 'a2009.csv', 'a2011.csv']
+        filenames = self.find_filenames(path)
+        for name in filenames:
+            logging.info('running'+' '+name)
+            self.combinedcontract(name, path, storedir)
+        ### 查漏补缺 Raw Data
+
+        # f = open("C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\202101-202103-a2111-Lv2\\202101-a2111\\20210104-a2111", "r")
+        # f
+        # tick_data
+        # path0 = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\2020tickdata'
+        # a = self.find_filenames(path0)
+        # path = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data'
+        # b = self.find_filenames(path)
+        # filenames = list(set(b) - set(a))
         # for name in filenames:
         #     logging.info('running'+' '+name)
         #     self.combinedcontract(name, path, storedir)
 
-        ### 查漏补缺 Raw Data
-        path0 = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\2020tickdata'
-        a = self.find_filenames(path0)
-        path = r'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data'
-        b = self.find_filenames(path)
-        filenames = list(set(b) - set(a))
-        for name in filenames:
-            logging.info('running'+' '+name)
-            self.combinedcontract(name, path, storedir)
+
 
 
 if __name__ == '__main__':
