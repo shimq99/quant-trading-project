@@ -218,6 +218,14 @@ class QTKlineModel(Base):
         data_interval['DateTime'] = np.where(data_interval['Time'] < '08:59:00', data_interval['DateTimeNextCalenDay'],data_interval['DateTime'])
         return data_interval
 
+    def getpreTraDay(self,firstdate):
+        firstdate = dt.datetime.strptime(str(firstdate), "%Y%m%d")
+        offset = max(1, (firstdate.weekday() + 6) % 7 - 3)
+        timedelta = datetime.timedelta(offset)
+        most_recent = firstdate - timedelta
+        most_recent = most_recent.strftime("%Y%m%d")
+        return most_recent
+
     def intervaliteratewindowTraDay(self,interval, a):
         columns_list = ['Open', 'High', 'Low', 'Close', 'Vol', 'OI', 'Buy1', 'BuyVol1', 'Sale1', 'SaleVol1','TimeStamp', 'Time', 'Date', 'InfoSequence','TraDate']
         fun = ['first', 'max', 'min', 'last', 'sum', 'last', 'last', 'last', 'last', 'last', 'last', 'last', 'last','last','last']
@@ -229,8 +237,8 @@ class QTKlineModel(Base):
         a['TradeType'] = 1
         a['TradeType'][a['Time'] > '19:00:00'] = 0
 
-        preTraDay = '20200101'
         date = tradaylist[0]
+        preTraDay = self.getpreTraDay(date)
         certaindate_data = a[a['Date'] == date].copy()
         certaindate_data['DateTime'] = pd.to_datetime(certaindate_data['DateTime'])
 
@@ -304,16 +312,16 @@ class QTKlineModel(Base):
         tick_data = tick_data.rename_axis('InfoSequence').reset_index()
         tick_data = self.filter_data(tick_data, 'closed')
         kline1min_data = self.Kline_1min(tick_data)
-        kline1min_data.to_csv('C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020\\Combined\\' + self.filename + '_1min.csv')
+        kline1min_data.to_csv('D:\\KlineData\\' + self.filename + '_1min.csv')
         return kline1min_data
 
     def run3min(self,kline1min_data):
-        kline5min_data = self.Kline_5min(kline1min_data, '15min')
+        kline5min_data = self.Kline_5min(kline1min_data, '3min')
         kline5min_data['OI_total'] = kline5min_data['OI']
         kline5min_data['OI'] = kline5min_data['OI'].diff().fillna(0)
         kline5min_data['OI'].iloc[0] = 0
         kline5min_data.fillna(0, inplace=True)
-        kline5min_data.to_csv('C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020\\Combined\\' + self.filename + '_15min.csv')
+        kline5min_data.to_csv('D:\\KlineData\\' + self.filename + '_3min.csv')
         return kline5min_data
 
     def run1h(self,kline1min_data):
@@ -334,16 +342,35 @@ class QTKlineModel(Base):
         # a['OI'].iloc[0] = 0
         a.fillna(0, inplace=True)
         a = a.reset_index(inplace=False)
-        a.to_csv('C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020\\Combined\\' + self.filename + '_1D.csv')
+        a.to_csv('D:\\KlineData\\' + self.filename + '_1D.csv')
+
+    def find_filenames(self,search_path):
+        ### Combine Raw Data for Y2020
+        file_list0 = []
+        for dir, dir_name, file_list in os.walk(search_path):
+            for file in file_list:
+                if file.endswith(".csv"):
+                    file_list0.append(file)
+        return list(set(file_list0))
+
+    def find_cat_filespath(self,cat, search_path):
+        result = []
+        for dir, dir_name, file_list in os.walk(search_path):
+            for files in file_list:
+                if (re.findall('([a-zA-Z ]*)\d*.*', files)[0] == cat.lower()) & (files.endswith('.csv')):
+                    result.append(os.path.join(search_path, dir, files))
+        return result
 
     def runKline(self):
-        name = ['a2011', 'a2101', 'a2103', 'a2105', 'a2107','a2109', 'a2111']
-        # name = ['c2001','c2003','c2005','c2007','c2009','c2011', 'c2101', 'c2103', 'c2105', 'c2107','c2109', 'c2111']
-        # name = ['a2003']
-        # name = ['b2001','b2002','b2003','b2004','b2005','b2006','b2007','b2008','b2009','b2010','b2011', 'b2012', 'b2101', 'b2102', 'b2103', 'b2104', 'b2105', 'b2106', 'b2107', 'b2108', 'b2109','b2110', 'b2111', 'b2112']
-        for aname in name:
-            logging.info('running'+aname)
-            pathname = 'C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\Combine2019_2020\\Combined\\'+aname+'.csv'
+        # name = ['a2011', 'a2101', 'a2103', 'a2105', 'a2107','a2109', 'a2111']
+        path = 'D:\\1920total'
+        # filenames = self.find_filenames(path)
+        cat = 'HC'
+        pathnames = self.find_cat_filespath(cat, path)
+        # pathnames = ['D:\\1920total\\rb2112.csv']
+        for pathname in pathnames:
+            logging.info('running'+pathname)
+            # pathname = 'D:\\1920total\\'+aname
             tick_data = pd.read_csv(pathname)
 
             base = os.path.basename(pathname)
@@ -351,7 +378,7 @@ class QTKlineModel(Base):
             kline1min_data = self.run1min(tick_data)
             # kline1min_data = pd.read_csv('C:\\Users\\shimq\\Desktop\\CMSI\\Tick Data\\2020A\\' + self.filename + '_1mintest.csv')
             ### after 1min, run should based on 1min data
-            # kline3min_data = self.run3min(kline1min_data)
+            kline3min_data = self.run3min(kline1min_data)
             # kline1h_data = self.run1h(kline1min_data)
             kline1day_data = self.run1day(kline1min_data)
 
