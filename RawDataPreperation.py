@@ -63,10 +63,10 @@ class RawDataPreparation(Base):
 
     def runrawdata(self):
         ### Combine Raw Data for Y2020
-        storedir = 'D:\\1920total'
+        storedir = 'F:\\1920total'
 
         ### first time running raw data
-        path = r'D:\\Combined'
+        path = r'F:\\Combined'
 
         # filenames = ['a2001.csv','a2003.csv', 'a2005.csv', 'a2007.csv', 'a2009.csv', 'a2011.csv']
         filenames = self.find_filenames(path)
